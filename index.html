@@ -1,0 +1,130 @@
+<form>
+  <input name="createPost" placeholder="Digite o seu post" />
+  <button type="submit">Postar</button>
+</form>
+<ul class="posts"></ul>
+<script>
+  /* Linguagem Pura:
+   * - Criar as variáveis
+   * - Sincronizar conteúdo das variáveis com o HTML
+   * - Atualizar as variáveis
+   */
+
+  // Banco de dados
+  // MODEL
+
+  const messages = {
+    users: [
+      {
+        username: "levxyca",
+      },
+    ],
+    posts: [
+      {
+        id: Date.now(),
+        owner: "levxyca",
+        content: "Yep!",
+      },
+    ],
+    readPosts() {
+      // Olhar a nossa base de dados em 'messages', passar por cada post armazenado anterior e cria o post no HTML
+      messages.posts.forEach(({ id, owner, content }) => {
+        messages.createPost({ id, owner: "levxyca", content: content }, true);
+      });
+    },
+    createPost(data, htmlOnly = false) {
+      const internId = Date.now();
+      if (!htmlOnly) {
+        // CREATE (Memória - Array/Objeto)
+        messages.posts.push({
+          id: data.id || internId,
+          owner: data.owner,
+          content: data.content,
+        });
+      }
+      // CREATE (HTML)
+      // Acessar lista de posts
+      const $posts = document.querySelector(".posts");
+      // Armazenando posts na lista de posts
+      // insertAdjacentHTML permite que você coloque um elemento HTML onde você quiser de acordo com a tag que você quiser
+      // Parâmetros: posição, conteúdo
+      $posts.insertAdjacentHTML(
+        "afterbegin",
+        `
+        <li data-id="${internId}">
+            <span contenteditable>
+                ${data.content}
+            <span>
+            <button class="btn__delete">❌</button>
+        </li>
+      `
+      );
+    },
+    deletePost(id) {
+      const listPostsUpdated = messages.posts.filter((postCurrent) => {
+        return postCurrent.id !== Number(id);
+      });
+      messages.posts = listPostsUpdated;
+    },
+    updateContentPost(id, newContent) {
+      const postUpdate = messages.posts.find((postMessage) => {
+        return postMessage.id === Number(id);
+      });
+
+      postUpdate.content = newContent;
+    },
+  };
+
+  /* [Front-end Web] */
+
+  // Armazenando o form
+  // Convenção: colocar cifrão na frente do nome da variável para indicar que tem um elemento HTML
+  const $form = document.querySelector("form");
+
+  // [CRUD: READ]
+  messages.readPosts();
+
+  // [CRUD: CREATE]
+  // Monitorando as submissões no formulário
+  $form.addEventListener("submit", function createPostController(infosEvent) {
+    // Evitando o comportamento padrão do formulário de dar reload.
+    infosEvent.preventDefault();
+    // Armazenar o valor do input e colocar ele em uma lista
+    const $createPost = document.querySelector('input[name="createPost"]');
+    // Criando post
+    messages.createPost({ owner: "levxyca", content: $createPost.value });
+    // Limpando o campo onde se digita
+    $createPost.value = "";
+  });
+
+  // [CRUD: DELETE]
+  // Monitorando se há algum click na lista de posts
+  document
+    .querySelector(".posts")
+    .addEventListener("click", function (infosEvent) {
+      // Informações sobre o alvo do click
+      const element = infosEvent.target;
+      const isBtnDeleteClick =
+        infosEvent.target.classList.contains("btn__delete");
+      // Apagando elemento da tela
+      if (isBtnDeleteClick) {
+        const id = element.parentNode.getAttribute("data-id");
+
+        // Manipula o lado do ServerSide/Banco de dados/Arquivo/Fonte!
+        messages.deletePost({ id });
+        // Manipula a View/Output/Etc.!
+        element.parentNode.remove();
+      }
+    });
+
+  // [CRUD: UPDATE]
+  // Monitorar sempre que tiver um input na página
+  document
+    .querySelector(".posts")
+    .addEventListener("input", function (infosEvent) {
+      const element = infosEvent.target;
+      const id = element.parentNode.getAttribute("data-id");
+
+      messages.updateContentPost(id, element.innerText);
+    });
+</script>
